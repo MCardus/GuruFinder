@@ -1,0 +1,97 @@
+version: '2'
+
+services:
+  elasticsearch-master:
+    build: search_engine/elasticsearch
+    image: gurufinder/elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - gurufinder
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 1g
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./data/master:/usr/share/elasticsearch/data
+    container_name: gurufinder_elasticsearch-master
+
+  elasticsearch-node:
+    build: search_engine/elasticsearch
+    image: gurufinder/elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-master
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 1g
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./data/node:/usr/share/elasticsearch/data
+    command: elasticsearch -E discovery.zen.ping.unicast.hosts=elasticsearch-master -E network.host=0.0.0.0 -E discovery.zen.minimum_master_nodes=1
+    container_name: gurufinder_elasticsearch-node
+
+  logstash:
+    build: twitter_crawlers/logstash_crawler
+    image: gurufinder/logstash
+    command: -f /etc/logstash/conf.d/
+    volumes:
+      - ./twitter_crawlers/logstash_crawler/config:/etc/logstash/conf.d
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-node
+    container_name: gurufinder_logstash
+    environment:
+      - TWITTER_CONSUMER_KEY
+      - TWITTER_CONSUMER_SECRET
+      - TWITTER_OAUTH_SECRET
+      - TWITTER_OAUTH_TOKEN
+
+  kibana:
+    build: search_engine/kibana
+    image: gurufinder/kibana
+    ports:
+      - "80:5601"
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-node
+    container_name: gurufinder_kibana
+    command: kibana -e http://elasticsearch-node:9200
+
+  tweepy_crawler:
+    build: twitter_crawlers/tweepy_crawler
+    image: gurufinder/tweepy_crawler
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-node
+    container_name: gurufinder_tweepy_crawler
+    environment:
+      - twitter_users
+
+volumes:
+  data:
+    driver: local
+
+networks:
+  gurufinder:
+    driver: bridge
