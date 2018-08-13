@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='gurufinder',
-    packages=["logging_setup",
+    packages=["loggingsetup",
               "twitter_crawlers/tweepy_crawler"],
     version='0.1',
     license='MIT',

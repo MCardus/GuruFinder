@@ -4,7 +4,7 @@ import tweepy
 import argparse
 import os
 import logging
-from logging_setup import setup_logging
+from loggingsetup import setup_logging
 
 
 class TweepyCrawler(object):
@@ -14,7 +14,8 @@ class TweepyCrawler(object):
         # Creation of the actual interface, using authentication
         self.auth = self._load_auth()
         self.api = tweepy.API(self.auth)
-        setup_logging(default_path="logging_setup/logging_properties.yml", severity_level=logging.INFO)
+        #TODO - Read using confreader
+        setup_logging(default_path="loggingsetup/logging_properties.yml", severity_level=logging.INFO)
 
     def download_user_timeline(self, user):
         """

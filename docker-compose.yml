@@ -78,7 +78,7 @@ services:
     command: kibana -e http://elasticsearch-node:9200
 
   tweepy_crawler:
-    build: twitter_crawlers/tweepy_crawler
+    build: .
     image: gurufinder/tweepy_crawler
     networks:
       - gurufinder
@@ -86,7 +86,15 @@ services:
       - elasticsearch-node
     container_name: gurufinder_tweepy_crawler
     environment:
-      - twitter_users
+      - TWITTER_USER
+      - TWITTER_CONSUMER_KEY
+      - TWITTER_CONSUMER_SECRET
+      - TWITTER_OAUTH_SECRET
+      - TWITTER_OAUTH_TOKEN
+    volumes:
+      - ./data/logs:/gurufinder/logs
+    working_dir: /gurufinder
+    command: python twitter_crawlers/tweepy_crawler/tweepy_crawler.py -u $TWITTER_USER
 
 volumes:
   data:
