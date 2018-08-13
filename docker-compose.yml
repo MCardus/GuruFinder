@@ -99,6 +99,8 @@ services:
 volumes:
   data:
     driver: local
+    driver_opts:
+      device: ./data/
 
 networks:
   gurufinder:
