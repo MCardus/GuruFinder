@@ -1,0 +1,13 @@
+filebeat.prospectors:
+  - paths:
+      - /usr/share/filebeat/data/logs/tweets.log
+    input_type: log
+    document_type: tweets-gurus
+
+  - paths:
+      - /usr/share/filebeat/data/logs/error.log
+    input_type: log
+    document_type: exception
+
+output.logstash:
+  hosts: ["logstash:5044"]

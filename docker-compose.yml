@@ -51,9 +51,9 @@ services:
   logstash:
     build: twitter_crawlers/logstash_crawler
     image: gurufinder/logstash
-    command: -f /etc/logstash/conf.d/
+    command: -f /etc/logstash/conf/
     volumes:
-      - ./twitter_crawlers/logstash_crawler/config:/etc/logstash/conf.d
+      - ./twitter_crawlers/logstash_crawler/config:/etc/logstash/conf
     networks:
       - gurufinder
     depends_on:
@@ -64,6 +64,19 @@ services:
       - TWITTER_CONSUMER_SECRET
       - TWITTER_OAUTH_SECRET
       - TWITTER_OAUTH_TOKEN
+
+  beats:
+    build: search_engine/beats
+    image: gurufinder/beats
+    volumes:
+      - ./search_engine/beats/config:/usbr/share/filebeat
+      - ./data/logs:/usr/share/filebeat/data/logs
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-node
+    container_name: gurufinder_beats
+    command: filebeat -e -c /usbr/share/filebeat/filebeat.yml
 
   kibana:
     build: search_engine/kibana

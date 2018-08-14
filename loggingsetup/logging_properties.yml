@@ -2,7 +2,7 @@ version: 1
 formatters:
   machine:
     format: >
-      {"filename" : "%(filename)s", "timestamp" : "%(asctime)s", "severity" : "%(levelname)s", "body" : "%(message)s"}
+      {"filename" : "%(filename)s", "timestamp" : "%(asctime)s", "severity" : "%(levelname)s", "body" : %(message)s}
 
 handlers:
   tweets_file:
