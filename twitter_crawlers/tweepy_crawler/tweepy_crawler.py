@@ -18,28 +18,29 @@ class TweepyCrawler(object):
         #TODO - Read using confreader
         setup_logging(default_path="loggingsetup/logging_properties.yml", severity_level=logging.INFO)
 
-    def download_user_timeline(self, user):
+    def download_user_timeline(self, users):
         """
-        Using api instance to download an entire timeline given a user
-        :param user: Twitter user. i.e @ThePSF
+        Using api instance to download an entire timeline given a list of coma separated users
+        :param users: Twitter coma separated users. i.e @ThePSF,@montypython ‏
         :return:
         """
-        for event in tweepy.Cursor(self.api.user_timeline, screen_name=user).items():
-            # Generating tweets though logging
-            #logging.info(json.dumps(event._json))
-            """
-            dict_keys(['created_at', 'id', 'id_str', 'text', 'truncated', 'entities', 'source', 'in_reply_to_status_id',
-                       'in_reply_to_status_id_str', 'in_reply_to_user_id', 'in_reply_to_user_id_str',
-                       'in_reply_to_screen_name', 'user', 'geo', 'coordinates', 'place', 'contributors',
-                       'retweeted_status', 'is_quote_status', 'retweet_count', 'favorite_count', 'favorited',
-                       'retweeted', 'possibly_sensitive', 'lang'])
-            """
-            user_info = {k: event._json['user'][k] for k in ('id', 'id_str', 'name', 'screen_name', 'location',
-                                                          'description','followers_count','lang','created_at')}
-            tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
-                                                      'favorite_count', 'favorited', 'retweet_count')}
-            tweet_info['user'] = user_info
-            logging.info(json.dumps(tweet_info))
+        for user in users.split(","):
+            for event in tweepy.Cursor(self.api.user_timeline, screen_name=user).items():
+                # Generating tweets though logging
+                #logging.info(json.dumps(event._json))
+                """
+                dict_keys(['created_at', 'id', 'id_str', 'text', 'truncated', 'entities', 'source', 'in_reply_to_status_id',
+                           'in_reply_to_status_id_str', 'in_reply_to_user_id', 'in_reply_to_user_id_str',
+                           'in_reply_to_screen_name', 'user', 'geo', 'coordinates', 'place', 'contributors',
+                           'retweeted_status', 'is_quote_status', 'retweet_count', 'favorite_count', 'favorited',
+                           'retweeted', 'possibly_sensitive', 'lang'])
+                """
+                user_info = {k: event._json['user'][k] for k in ('id', 'id_str', 'name', 'screen_name', 'location',
+                                                              'description','followers_count','lang','created_at')}
+                tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
+                                                          'favorite_count', 'favorited', 'retweet_count')}
+                tweet_info['user'] = user_info
+                logging.info(json.dumps(tweet_info))
 
     def _load_auth(self):
         """
