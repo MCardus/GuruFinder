@@ -16,7 +16,7 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    mem_limit: 1g
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     cap_add:
       - IPC_LOCK
     volumes:
@@ -40,7 +40,7 @@ services:
       nofile:
         soft: 65536
         hard: 65536
-    mem_limit: 1g
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     cap_add:
       - IPC_LOCK
     volumes:
