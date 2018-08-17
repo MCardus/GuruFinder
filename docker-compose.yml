@@ -43,6 +43,9 @@ services:
     mem_limit: "${ELASTIC_MEM_LIMIT}"
     cap_add:
       - IPC_LOCK
+    ports:
+      - "9200:9200"
+      - "9300:9300"
     volumes:
       - ./data/node:/usr/share/elasticsearch/data
     command: elasticsearch -E discovery.zen.ping.unicast.hosts=elasticsearch-master -E network.host=0.0.0.0 -E discovery.zen.minimum_master_nodes=1
