@@ -6,6 +6,7 @@ import os
 import logging
 import json
 from loggingsetup import setup_logging
+import time
 
 
 class TweepyCrawler(object):
@@ -17,7 +18,7 @@ class TweepyCrawler(object):
         self.api = tweepy.API(self.auth)
         #TODO - Read using confreader
         setup_logging(default_path="loggingsetup/logging_properties.yml", severity_level=logging.INFO)
-        self.logger = logging.getLogger('twiter_crawler')
+        self.twitter_logger = logging.getLogger('twiter_crawler')
 
     def download_user_timeline(self, users):
         """
@@ -26,21 +27,18 @@ class TweepyCrawler(object):
         :return:
         """
         for user in users.split(","):
-            for event in tweepy.Cursor(self.api.user_timeline, screen_name=user).items():
-                # Generating tweets though logging
-                """
-                dict_keys(['created_at', 'id', 'id_str', 'text', 'truncated', 'entities', 'source', 'in_reply_to_status_id',
-                           'in_reply_to_status_id_str', 'in_reply_to_user_id', 'in_reply_to_user_id_str',
-                           'in_reply_to_screen_name', 'user', 'geo', 'coordinates', 'place', 'contributors',
-                           'retweeted_status', 'is_quote_status', 'retweet_count', 'favorite_count', 'favorited',
-                           'retweeted', 'possibly_sensitive', 'lang'])
-                """
-                user_info = {k: event._json['user'][k] for k in ('id', 'id_str', 'name', 'screen_name', 'location',
-                                                              'description','followers_count','lang','created_at')}
-                tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
-                                                          'favorite_count', 'favorited', 'retweet_count')}
-                tweet_info['user'] = user_info
-                self.logger.info(json.dumps(tweet_info))
+            try:
+                # @todo find a more suitable way to avoi twitter api limitations
+                for event in tweepy.Cursor(self.api.user_timeline, screen_name=user).items():
+                    # Generating tweets though logging
+                    user_info = {k: event._json['user'][k] for k in ('id', 'id_str', 'name', 'screen_name', 'location',
+                                                                  'description','followers_count','lang','created_at')}
+                    tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
+                                                              'favorite_count', 'favorited', 'retweet_count')}
+                    tweet_info['user'] = user_info
+                    self.twitter_logger.info(json.dumps(tweet_info))
+            except tweepy.TweepError:
+                time.sleep(60 * 15)
 
     def _load_auth(self):
         """
