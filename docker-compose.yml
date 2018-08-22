@@ -4,6 +4,7 @@ services:
   elasticsearch-master:
     build: search_engine/elasticsearch
     image: gurufinder/elasticsearch
+    restart: always
     environment:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -26,6 +27,7 @@ services:
   elasticsearch-node:
     build: search_engine/elasticsearch
     image: gurufinder/elasticsearch
+    restart: always
     environment:
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -55,6 +57,7 @@ services:
     build: twitter_crawlers/logstash_crawler
     image: gurufinder/logstash
     command: -f /etc/logstash/conf/
+    restart: always
     volumes:
       - ./twitter_crawlers/logstash_crawler/config:/etc/logstash/conf
     networks:
@@ -71,6 +74,7 @@ services:
   beats:
     build: search_engine/beats
     image: gurufinder/beats
+    restart: always
     volumes:
       - ./search_engine/beats/config:/usbr/share/filebeat
       - ./data/logs:/usr/share/filebeat/data/logs
@@ -84,6 +88,7 @@ services:
   kibana:
     build: search_engine/kibana
     image: gurufinder/kibana
+    restart: always
     ports:
       - "80:5601"
     networks:
@@ -96,6 +101,7 @@ services:
   tweepy_crawler:
     build: .
     image: gurufinder/tweepy_crawler
+    restart: on-failure
     networks:
       - gurufinder
     depends_on:
@@ -111,6 +117,36 @@ services:
       - ./data/logs:/gurufinder/logs
     working_dir: /gurufinder
     command: python twitter_crawlers/tweepy_crawler/tweepy_crawler.py -u $TWITTER_USER
+
+  fit_gururecommender:
+    build: .
+    image: gurufinder/gururecommender
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-node
+    container_name: gurufinder_fit_gururecommender
+    volumes:
+      - ./data/logs:/gurufinder/logs
+      - ./gururecommender/model:/gurufinder/gururecommender/model
+    working_dir: /gurufinder
+    mem_limit: 200G
+    command: python gururecommender/guru_recommender.py -a fit -m lda
+
+  predict_gururecommender:
+    build: .
+    image: gurufinder/gururecommender
+    restart: on-failure
+    networks:
+      - gurufinder
+    depends_on:
+      - elasticsearch-node
+    container_name: gurufinder_predict_gururecommender
+    volumes:
+      - ./data/logs:/gurufinder/logs
+      - ./gururecommender/model:/gurufinder/gururecommender/model
+    working_dir: /gurufinder
+    command: python gururecommender/guru_recommender.py -a predict -m lda
 
 volumes:
   data:

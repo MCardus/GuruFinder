@@ -13,6 +13,14 @@ handlers:
       maxBytes: 10485760 # 10MB
       backupCount: 20
       encoding: utf8
+  guru_predict_file:
+      class: logging.handlers.RotatingFileHandler
+      level: DEBUG
+      formatter: machine
+      filename: logs/predict.log
+      maxBytes: 10485760 # 10MB
+      backupCount: 20
+      encoding: utf8
   gurufinder_error:
       class: logging.handlers.RotatingFileHandler
       level: ERROR
@@ -26,6 +34,13 @@ handlers:
     level: DEBUG
     formatter: machine
     stream: ext://sys.stdout
+loggers:
+  guru_predict:
+    level: DEBUG
+    handlers: [console, guru_predict_file, gurufinder_error]
+  twiter_crawler:
+    level: DEBUG
+    handlers: [console, tweets_file, gurufinder_error]
 root:
   level: DEBUG
-  handlers: [console, tweets_file, gurufinder_error]
+  handlers: [console, gurufinder_error]

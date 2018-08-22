@@ -17,6 +17,7 @@ class TweepyCrawler(object):
         self.api = tweepy.API(self.auth)
         #TODO - Read using confreader
         setup_logging(default_path="loggingsetup/logging_properties.yml", severity_level=logging.INFO)
+        self.logger = logging.getLogger('twiter_crawler')
 
     def download_user_timeline(self, users):
         """
@@ -27,7 +28,6 @@ class TweepyCrawler(object):
         for user in users.split(","):
             for event in tweepy.Cursor(self.api.user_timeline, screen_name=user).items():
                 # Generating tweets though logging
-                #logging.info(json.dumps(event._json))
                 """
                 dict_keys(['created_at', 'id', 'id_str', 'text', 'truncated', 'entities', 'source', 'in_reply_to_status_id',
                            'in_reply_to_status_id_str', 'in_reply_to_user_id', 'in_reply_to_user_id_str',
@@ -40,7 +40,7 @@ class TweepyCrawler(object):
                 tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
                                                           'favorite_count', 'favorited', 'retweet_count')}
                 tweet_info['user'] = user_info
-                logging.info(json.dumps(tweet_info))
+                self.logger.info(json.dumps(tweet_info))
 
     def _load_auth(self):
         """
@@ -63,7 +63,6 @@ class TweepyCrawler(object):
         return auth
 
 if __name__ == "__main__":
-    # construct the argument parse and parse the arguments
     ap = argparse.ArgumentParser(description='Python Twitter API client')
     ap.add_argument("-u",
                     "--user",
