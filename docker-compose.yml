@@ -65,6 +65,7 @@ services:
     depends_on:
       - elasticsearch-node
     container_name: gurufinder_logstash
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     environment:
       - TWITTER_CONSUMER_KEY
       - TWITTER_CONSUMER_SECRET

@@ -48,7 +48,7 @@ class GuruRecommender(object):
         return top_n_gurus
 
 
-    def fit(self, model_type):
+    def fit(self, model_type, lda_topic_granurality=3, lda_max_topics=12):
         """
         Collect all tweets in elastic and trains a new model which is serialized in disk
         :param model_type: Model type
@@ -57,7 +57,9 @@ class GuruRecommender(object):
         tweets_list_processed = [". ".join(tweet) for tweet in tweets_list]
         if model_type == self.LDA_MODEL:
             logging.info(f"""LDA fit in proces""")
-            self.lda.fit(tweets_list_processed)
+            self.lda.fit(tweets_list_processed,
+                         topic_search_granurality=lda_topic_granurality,
+                         max_topics=lda_max_topics)
         elif model_type == self.WORD2VEC_MODEL:
             pass
         else:
