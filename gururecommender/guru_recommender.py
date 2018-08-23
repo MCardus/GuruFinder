@@ -9,13 +9,16 @@ import argparse
 from text_models.topic_modelling import LDA
 from loggingsetup import setup_logging
 from gururecommender.elasticsearch_cli import ElasticsearcCli
+from sklearn.neighbors import BallTree
+import ast
 
 
 class GuruRecommender(object):
 
-    def __init__(self):
-        with open('gururecommender/conf/config.json', 'r') as f:
-            config = json.load(f)
+    def __init__(self, config=None):
+        if not config:
+            with open('gururecommender/conf/config.json', 'r') as f:
+                config = json.load(f)
         print(config["elastic_host"])
         self.elasticsearch = ElasticsearcCli(host=config["elastic_host"])
         self.lda = LDA(default_lda_pickle_filepath="gururecommender/models/lda.pkl",
@@ -28,9 +31,22 @@ class GuruRecommender(object):
     def elasticsearch_top_n_gurus(self, input_text, n=20):
         return self.elasticsearch.search_similar_top_n(input_text=input_text, n=n)
 
-    def top_n_gurus(self, input_text, model_type, n=20):
-        first_selection = self.elasticsearch_top_n_gurus(input_text=input_text,
-                                                         n=n)
+    def top_n_gurus(self, input_text, model_type, n=10):
+        # Elasticsearch pre-selection
+        first_selection_gurus = self.elasticsearch_top_n_gurus(input_text=input_text,
+                                                         n=n*2)
+        first_selection_guru_codes = self.elasticsearch.retrieve_gurus_codes(first_selection_gurus)
+        codes = np.array([ast.literal_eval(string_code) for string_code in list(first_selection_guru_codes.values())])
+
+        # Creating input_text code
+        input_text_code = self._predict_single(input_text=input_text, model_type=model_type)
+
+        # Looking for nearest gurus
+        tree = BallTree(codes, leaf_size=2)
+        dist, ind = tree.query(input_text_code, k=n)
+        top_n_gurus = [list(first_selection_guru_codes.keys())[index] for index in ind[0]]
+        return top_n_gurus
+
 
     def fit(self, model_type):
         """
@@ -58,6 +74,15 @@ class GuruRecommender(object):
             raise ValueError(f"""Model {model_type} does not exists""")
         for k,v in prediction.items():
             self.predict_logger.info(json.dumps({"user": k, "code": json.dumps(v[0].tolist())}))
+
+    def _predict_single(self, input_text, model_type):
+        if model_type.lower() == self.LDA_MODEL:
+            prediction = self.lda.predict(np.array([input_text]))
+        elif model_type == self.WORD2VEC_MODEL:
+            pass
+        else:
+            raise ValueError(f"""Model {model_type} does not exists""")
+        return prediction
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description='Python Twitter API client')

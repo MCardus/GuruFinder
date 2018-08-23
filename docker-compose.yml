@@ -128,7 +128,7 @@ services:
     container_name: gurufinder_fit_gururecommender
     volumes:
       - ./data/logs:/gurufinder/logs
-      - ./gururecommender/model:/gurufinder/gururecommender/model
+      - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
     mem_limit: 200G
     command: python gururecommender/guru_recommender.py -a fit -m lda
@@ -144,7 +144,7 @@ services:
     container_name: gurufinder_predict_gururecommender
     volumes:
       - ./data/logs:/gurufinder/logs
-      - ./gururecommender/model:/gurufinder/gururecommender/model
+      - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
     command: python gururecommender/guru_recommender.py -a predict -m lda
 

@@ -18,6 +18,12 @@ class TestElasticSearchCli(unittest.TestCase):
     def test_retrieve_all_tweets(self):
         assert isinstance(self.elasticsearch_cli.retrieve_all_tweets(), dict)
 
+    def test_search_similar_top_n(self):
+        input_text = "I love Art Buckwald’s quote: Dinner is not what you do in the evening before something else. Dinner is the evening. That is what makes Savor the Summit held in Park City each June so much fun.  It is an entire evening of great food, fabulous company and making new friends. Cuisine Unlimited is the only caterer invited. It is one of our favorite events of the year and so happy we have many guests who return year after year."
+        output = self.elasticsearch_cli.search_similar_top_n(input_text=input_text, n=4)
+        print(output)
+        assert isinstance(output, list)
+
 
 if __name__ == '__main__':
     unittest.main()
