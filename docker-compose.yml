@@ -84,6 +84,7 @@ services:
     depends_on:
       - elasticsearch-node
     container_name: gurufinder_beats
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     command: filebeat -e -c /usbr/share/filebeat/filebeat.yml
 
   kibana:
@@ -96,6 +97,7 @@ services:
       - gurufinder
     depends_on:
       - elasticsearch-node
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     container_name: gurufinder_kibana
     command: kibana -e http://elasticsearch-node:9200
 
@@ -108,6 +110,7 @@ services:
     depends_on:
       - elasticsearch-node
     container_name: gurufinder_tweepy_crawler
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     environment:
       - TWITTER_USER
       - TWITTER_CONSUMER_KEY
@@ -148,6 +151,7 @@ services:
       - ./data/logs:/gurufinder/logs
       - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
+    mem_limit: "${ELASTIC_MEM_LIMIT}"
     command: python gururecommender/guru_recommender.py -a predict -m lda
 
 volumes:

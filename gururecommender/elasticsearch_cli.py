@@ -30,8 +30,8 @@ class ElasticsearcCli(object):
         """
         gurus_tweets = self.retrieve_gurus_tweets()
         gurus_keywords = self.retrieve_keywords_tweets()
-        gurus_tweets.update(gurus_keywords)
-        return gurus_tweets
+        gurus_keywords.update(gurus_tweets)
+        return gurus_keywords
 
     def retrieve_keywords_tweets(self):
         """
