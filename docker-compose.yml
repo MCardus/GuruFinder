@@ -79,6 +79,7 @@ services:
     volumes:
       - ./search_engine/beats/config:/usbr/share/filebeat
       - ./data/logs:/usr/share/filebeat/data/logs
+      - ./data/registry:/usr/share/filebeat/data/registry
     networks:
       - gurufinder
     depends_on:
@@ -136,6 +137,7 @@ services:
     working_dir: /gurufinder
     mem_limit: 200G
     cpuset: 0-45
+    cpu
     command: python gururecommender/guru_recommender.py -a fit -m lda
 
   predict_gururecommender:

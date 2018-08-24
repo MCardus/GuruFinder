@@ -5,7 +5,7 @@ filebeat.prospectors:
     tags: ["gurus"]
 
   - paths:
-      - /usr/share/filebeat/data/logs/predict.log
+      - /usr/share/filebeat/data/logs/predict*
     input_type: log
     tags: ["predictions"]
 
