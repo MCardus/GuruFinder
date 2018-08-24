@@ -31,12 +31,13 @@ class TweepyCrawler(object):
                 # @todo find a more suitable way to avoi twitter api limitations
                 for event in tweepy.Cursor(self.api.user_timeline, screen_name=user).items():
                     # Generating tweets though logging
-                    user_info = {k: event._json['user'][k] for k in ('id', 'id_str', 'name', 'screen_name', 'location',
-                                                                  'description','followers_count','lang','created_at')}
-                    tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
-                                                              'favorite_count', 'favorited', 'retweet_count')}
-                    tweet_info['user'] = user_info
-                    self.twitter_logger.info(json.dumps(tweet_info))
+                    if event._json['lang'] == "en":
+                        user_info = {k: event._json['user'][k] for k in ('id', 'id_str', 'name', 'screen_name', 'location',
+                                                                      'description','followers_count','lang','created_at')}
+                        tweet_info = {k: event._json[k] for k in ('created_at', 'id', 'id_str', 'text', 'geo', 'lang',
+                                                                  'favorite_count', 'favorited', 'retweet_count')}
+                        tweet_info['user'] = user_info
+                        self.twitter_logger.info(json.dumps(tweet_info))
             except tweepy.TweepError:
                 time.sleep(60 * 15)
 

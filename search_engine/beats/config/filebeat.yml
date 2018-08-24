@@ -1,6 +1,6 @@
 filebeat.prospectors:
   - paths:
-      - /usr/share/filebeat/data/logs/tweets.log
+      - /usr/share/filebeat/data/logs/tweets*
     input_type: log
     tags: ["gurus"]
 
