@@ -46,6 +46,7 @@ class GuruRecommender(object):
         k=len(codes) if n > len(codes) else n
         dist, ind = tree.query(input_text_code, k=k)
         top_n_gurus = [list(first_selection_guru_codes.keys())[index] for index in ind[0]]
+        logging.info(f"""Top n gurus: {top_n_gurus}""")
         return top_n_gurus
 
 

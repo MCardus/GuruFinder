@@ -157,7 +157,7 @@ services:
         - ./data/logs:/gurufinder/logs
         - ./data/models:/gurufinder/gururecommender/models
       working_dir: /gurufinder
-      command: python gururecommender/guru_recommender.py -a recommend -m lda -i $INPUT_TEXT
+      command: python gururecommender/guru_recommender.py -a recommend -m lda -i "$INPUT_TEXT"
 
 volumes:
   data:
