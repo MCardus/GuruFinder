@@ -137,7 +137,6 @@ services:
     working_dir: /gurufinder
     mem_limit: 200G
     cpuset: 0-45
-    cpu
     command: python gururecommender/guru_recommender.py -a fit -m lda
 
   predict_gururecommender:
