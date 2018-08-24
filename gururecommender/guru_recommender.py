@@ -31,6 +31,7 @@ class GuruRecommender(object):
     def elasticsearch_top_n_gurus(self, input_text, n=20):
         elastic_top_n = self.elasticsearch.search_similar_top_n(input_text=input_text, n=n)
         logging.info(f"""Elastic top n: {elastic_top_n}""")
+        return elastic_top_n
 
     def top_n_gurus(self, input_text, model_type, n=10):
         # Elasticsearch pre-selection
