@@ -79,7 +79,6 @@ services:
     volumes:
       - ./search_engine/beats/config:/usbr/share/filebeat
       - ./data/logs:/usr/share/filebeat/data/logs
-      - ./data/registry:/usr/share/filebeat/data/registry
     networks:
       - gurufinder
     depends_on:
