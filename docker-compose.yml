@@ -127,7 +127,6 @@ services:
       - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
     mem_limit: 200G
-    cpuset: 0-45
     command: python gururecommender/guru_recommender.py -a fit -m lda
 
   predict_gururecommender:
@@ -144,6 +143,21 @@ services:
       - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
     command: python gururecommender/guru_recommender.py -a predict -m lda
+
+  recommend_gururecommender:
+      build: .
+      image: gurufinder/gururecommender
+      restart: on-failure
+      networks:
+        - gurufinder
+      depends_on:
+        - elasticsearch-node
+      container_name: gurufinder_recommend_gururecommender
+      volumes:
+        - ./data/logs:/gurufinder/logs
+        - ./data/models:/gurufinder/gururecommender/models
+      working_dir: /gurufinder
+      command: python gururecommender/guru_recommender.py -a recommend -m lda -i $INPUT_TEXT
 
 volumes:
   data:

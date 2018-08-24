@@ -42,8 +42,9 @@ class GuruRecommender(object):
         input_text_code = self._predict_single(input_text=input_text, model_type=model_type)
 
         # Looking for nearest gurus
-        tree = BallTree(codes, leaf_size=2)
-        dist, ind = tree.query(input_text_code, k=n)
+        tree = BallTree(codes, leaf_size=len(codes)*2)
+        k=len(codes) if n > len(codes) else n
+        dist, ind = tree.query(input_text_code, k=k)
         top_n_gurus = [list(first_selection_guru_codes.keys())[index] for index in ind[0]]
         return top_n_gurus
 
@@ -91,14 +92,19 @@ if __name__ == "__main__":
     ap.add_argument("-a",
                     "--action",
                     required=True,
-                    help="action. options: fit, predict")
+                    help="action. options: fit, predict, recommend")
     ap.add_argument("-m",
                     "--model",
                     required=True,
                     help="model type, options: lda")
+    ap.add_argument("-i",
+                    "--input",
+                    required=False,
+                    help="input recommendation text")
     args = vars(ap.parse_args())
     action = args['action']
     model = args['model']
+    input_text = args['input']
     gurufinder = GuruRecommender()
 
     if not model in ["lda"]:
@@ -107,6 +113,8 @@ if __name__ == "__main__":
             gurufinder.fit(model_type=model)
     elif action == "predict":
             gurufinder.predict(model_type=model)
+    elif action == "recommend":
+            gurufinder.top_n_gurus(input_text=input_text,model_type=model)
     else:
         raise ValueError(f"""action {action} not known""")
     # while True:
