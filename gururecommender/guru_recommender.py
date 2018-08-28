@@ -7,6 +7,7 @@ from elasticsearch_dsl import Search
 from elasticsearch_dsl.query import Match
 import argparse
 from text_models.topic_modelling import LDA
+from text_models.embeddeds import Doc2Vec
 from loggingsetup import setup_logging
 from gururecommender.elasticsearch_cli import ElasticsearcCli
 from sklearn.neighbors import BallTree
@@ -23,7 +24,9 @@ class GuruRecommender(object):
         self.elasticsearch = ElasticsearcCli(host=config["elastic_host"])
         self.lda = LDA(default_lda_pickle_filepath="gururecommender/models/lda.pkl",
                        default_vectorizer_pickle_filepath="gururecommender/models/vectorizer.pkl")
+        self.doc2vec = Doc2Vec(default_model_pickle_filepath="gururecommender/models/d2v.model")
         self.LDA_MODEL = "lda"
+        self.DOC2VEC_MODEL = "doc2vec"
         self.WORD2VEC_MODEL = "word2vec"
         setup_logging(default_path="loggingsetup/logging_properties.yml", severity_level=logging.INFO)
         self.predict_logger = logging.getLogger('guru_predict')
@@ -34,10 +37,11 @@ class GuruRecommender(object):
         return elastic_top_n
 
     def top_n_gurus(self, input_text, model_type, n=10):
+        logging.info(f"""Looking for top {n} gurus using model type {model_type}""")
         # Elasticsearch pre-selection
         first_selection_gurus = self.elasticsearch_top_n_gurus(input_text=input_text,
-                                                         n=n*2)
-        first_selection_guru_codes = self.elasticsearch.retrieve_gurus_codes(first_selection_gurus)
+                                                               n=n*2)
+        first_selection_guru_codes = self.elasticsearch.retrieve_gurus_codes(first_selection_gurus, model_type=model_type)
         codes = np.array([ast.literal_eval(string_code) for string_code in list(first_selection_guru_codes.values())])
 
         # Creating input_text code
@@ -57,35 +61,43 @@ class GuruRecommender(object):
         Collect all tweets in elastic and trains a new model which is serialized in disk
         :param model_type: Model type
         """
+        logging.info(f"""Fit using model type {model_type}""")
         tweets_list = list(self.elasticsearch.retrieve_all_tweets().values())
         tweets_list_processed = [". ".join(tweet) for tweet in tweets_list]
-        if model_type == self.LDA_MODEL:
+        if model_type.lower() == self.LDA_MODEL:
             logging.info(f"""LDA fit in proces""")
             self.lda.fit(tweets_list_processed,
                          topic_search_granurality=lda_topic_granurality,
                          max_topics=lda_max_topics)
-        elif model_type == self.WORD2VEC_MODEL:
+        elif model_type.lower() == self.WORD2VEC_MODEL:
             pass
+        elif model_type.lower() == self.DOC2VEC_MODEL:
+            self.doc2vec.fit(tweets_list_processed)
         else:
             raise ValueError(f"""Model {model_type} does not exists""")
 
     def predict(self, model_type):
+        logging.info(f"""Predict using model type {model_type}""")
         gurus_dict = self.elasticsearch.retrieve_gurus_tweets()
         gurus_text = {k: '. '.join(v) for k, v in gurus_dict.items()}
         if model_type.lower() == self.LDA_MODEL:
             prediction = {k: self.lda.predict(np.array([v])) for k, v in gurus_text.items()}
-        elif model_type == self.WORD2VEC_MODEL:
+        elif model_type.lower() == self.WORD2VEC_MODEL:
             pass
+        elif model_type.lower() == self.DOC2VEC_MODEL:
+            prediction = {k: self.doc2vec.predict(np.array([v])) for k, v in gurus_text.items()}
         else:
             raise ValueError(f"""Model {model_type} does not exists""")
         for k,v in prediction.items():
-            self.predict_logger.info(json.dumps({"user": k, "code": json.dumps(v[0].tolist())}))
+            self.predict_logger.info(json.dumps({"user": k,
+                                                 "code": json.dumps(v[0].tolist()),
+                                                 "model_type": model_type.lower()}))
 
     def _predict_single(self, input_text, model_type):
         if model_type.lower() == self.LDA_MODEL:
             prediction = self.lda.predict(np.array([input_text]))
-        elif model_type == self.WORD2VEC_MODEL:
-            pass
+        elif model_type.lower() == self.DOC2VEC_MODEL:
+            self.doc2vec.predict(np.array([input_text]))
         else:
             raise ValueError(f"""Model {model_type} does not exists""")
         return prediction
@@ -110,7 +122,7 @@ if __name__ == "__main__":
     input_text = args['input']
     gurufinder = GuruRecommender()
 
-    if not model in ["lda"]:
+    if not model in [gurufinder.DOC2VEC_MODEL, gurufinder.LDA_MODEL]:
         raise ValueError(f"""model {model} not known""")
     if action == "fit":
             gurufinder.fit(model_type=model)

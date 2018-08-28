@@ -52,7 +52,7 @@ services:
   logstash:
     build: twitter_crawlers/logstash_crawler
     image: gurufinder/logstash
-    command: -f /etc/logstash/conf/
+    command: -f --debug /etc/logstash/conf/
     restart: always
     volumes:
       - ./twitter_crawlers/logstash_crawler/config:/etc/logstash/conf
@@ -127,7 +127,8 @@ services:
       - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
     mem_limit: 200G
-    command: python gururecommender/guru_recommender.py -a fit -m lda
+    cpuset: "$CPUSET"
+    command: python gururecommender/guru_recommender.py -a fit -m "$MODEL_TYPE"
 
   predict_gururecommender:
     build: .
@@ -142,7 +143,7 @@ services:
       - ./data/logs:/gurufinder/logs
       - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
-    command: python gururecommender/guru_recommender.py -a predict -m lda
+    command: python gururecommender/guru_recommender.py -a predict -m "$MODEL_TYPE"
 
   recommend_gururecommender:
       build: .
@@ -157,7 +158,7 @@ services:
         - ./data/logs:/gurufinder/logs
         - ./data/models:/gurufinder/gururecommender/models
       working_dir: /gurufinder
-      command: python gururecommender/guru_recommender.py -a recommend -m lda -i "$INPUT_TEXT"
+      command: python gururecommender/guru_recommender.py -a recommend -m "$MODEL_TYPE" -i "$INPUT_TEXT"
 
 volumes:
   data:

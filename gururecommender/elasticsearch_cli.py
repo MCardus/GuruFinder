@@ -72,11 +72,12 @@ class ElasticsearcCli(object):
 
         return gurus_dict
 
-    def retrieve_gurus_codes(self, gurus_to_filter):
+    def retrieve_gurus_codes(self, gurus_to_filter, model_type):
         filtered_gurus = dict()
         for guru in gurus_to_filter:
             guru_dict = Search(using=self.client, index=self.GURUS_CODES_INDEX)\
-                .source(include=["body.user","body.code"])\
+                .source(include=["body.user","body.code"]) \
+                .filter('bool', must={'match': {'body.code_type': model_type.lower()}}) \
                 .filter('bool', must={'match': {'body.user': guru}})[0].execute()[0]
             user = guru_dict.body['user']
             code = guru_dict.body['code']
