@@ -119,7 +119,7 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
     action = args['action']
     model = args['model']
-    input_text = args['input']
+    input_text = str(args['input'])
     gurufinder = GuruRecommender()
 
     if not model in [gurufinder.DOC2VEC_MODEL, gurufinder.LDA_MODEL]:

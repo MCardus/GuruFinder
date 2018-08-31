@@ -52,7 +52,7 @@ services:
   logstash:
     build: twitter_crawlers/logstash_crawler
     image: gurufinder/logstash
-    command: -f --debug /etc/logstash/conf/
+    command: --debug -f /etc/logstash/conf/
     restart: always
     volumes:
       - ./twitter_crawlers/logstash_crawler/config:/etc/logstash/conf
@@ -117,6 +117,7 @@ services:
   fit_gururecommender:
     build: .
     image: gurufinder/gururecommender
+    restart: on-failure
     networks:
       - gurufinder
     depends_on:
@@ -127,7 +128,6 @@ services:
       - ./data/models:/gurufinder/gururecommender/models
     working_dir: /gurufinder
     mem_limit: 200G
-    cpuset: "$CPUSET"
     command: python gururecommender/guru_recommender.py -a fit -m "$MODEL_TYPE"
 
   predict_gururecommender:
