@@ -16,19 +16,23 @@ import ast
 
 class GuruRecommender(object):
 
-    def __init__(self, config=None):
+    def __init__(self, config=None,
+                 default_lda_pickle_filepath="gururecommender/models/lda.pkl",
+                 default_vectorizer_pickle_filepath="gururecommender/models/vectorizer.pkl",
+                 default_model_pickle_filepath="gururecommender/models/d2v.model"):
         if not config:
             with open('gururecommender/conf/config.json', 'r') as f:
                 config = json.load(f)
-        print(config["elastic_host"])
+
         self.elasticsearch = ElasticsearcCli(host=config["elastic_host"])
-        self.lda = LDA(default_lda_pickle_filepath="gururecommender/models/lda.pkl",
-                       default_vectorizer_pickle_filepath="gururecommender/models/vectorizer.pkl")
-        self.doc2vec = Doc2Vec(default_model_pickle_filepath="gururecommender/models/d2v.model")
+        self.lda = LDA(default_lda_pickle_filepath,
+                       default_vectorizer_pickle_filepath)
+        self.doc2vec = Doc2Vec(default_model_pickle_filepath)
         self.LDA_MODEL = "lda"
         self.DOC2VEC_MODEL = "doc2vec"
         self.WORD2VEC_MODEL = "word2vec"
         setup_logging(default_path="loggingsetup/logging_properties.yml", severity_level=logging.INFO)
+        logging.info(f"""Elasticsearch host {config["elastic_host"]}""")
         self.predict_logger = logging.getLogger('guru_predict')
 
     def elasticsearch_top_n_gurus(self, input_text, n=20):
@@ -85,7 +89,7 @@ class GuruRecommender(object):
         elif model_type.lower() == self.WORD2VEC_MODEL:
             pass
         elif model_type.lower() == self.DOC2VEC_MODEL:
-            prediction = {k: self.doc2vec.predict(np.array([v])) for k, v in gurus_text.items()}
+            prediction = {k: self.doc2vec.predict(v) for k, v in gurus_text.items()}
         else:
             raise ValueError(f"""Model {model_type} does not exists""")
         for k,v in prediction.items():

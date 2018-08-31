@@ -41,11 +41,9 @@ class ElasticsearcCli(object):
         keywords_dict = dict()
         keywords_entries = Search(using=self.client, index=self.KEYWORDS_INDEX).source(include=["text",
                                                                                                 "user.screen_name"])
-        for entry in keywords_entries[0:keywords_entries.count()].execute():
+        for entry in keywords_entries[0:keywords_entries.count()].scan():
             user = entry["user"]["screen_name"]
             text = entry["text"]
-            if user == 'JFGaleote':
-                pass
             if user in keywords_dict:
                 keywords_dict[user].append(text)
             else:
@@ -62,7 +60,7 @@ class ElasticsearcCli(object):
         gurus_entries = Search(using=self.client, index=self.GURUS_INDEX).source(include=["body.text",
                                                                              "body.user.screen_name"])
 
-        for entry in gurus_entries[0:gurus_entries.count()].execute():
+        for entry in gurus_entries[0:gurus_entries.count()].scan():
             user = entry.body["user"]["screen_name"]
             text = entry.body["text"]
             if user in gurus_dict:
