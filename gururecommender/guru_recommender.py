@@ -85,7 +85,7 @@ class GuruRecommender(object):
         gurus_dict = self.elasticsearch.retrieve_gurus_tweets()
         gurus_text = {k: '. '.join(v) for k, v in gurus_dict.items()}
         if model_type.lower() == self.LDA_MODEL:
-            prediction = {k: self.lda.predict(np.array([v])) for k, v in gurus_text.items()}
+            prediction = {k: self.lda.predict(np.array([v]))[0] for k, v in gurus_text.items()}
         elif model_type.lower() == self.WORD2VEC_MODEL:
             pass
         elif model_type.lower() == self.DOC2VEC_MODEL:
@@ -94,7 +94,7 @@ class GuruRecommender(object):
             raise ValueError(f"""Model {model_type} does not exists""")
         for k,v in prediction.items():
             self.predict_logger.info(json.dumps({"user": k,
-                                                 "code": json.dumps(v[0].tolist()),
+                                                 "code": json.dumps(v.tolist()),
                                                  "model_type": model_type.lower()}))
 
     def _predict_single(self, input_text, model_type):
