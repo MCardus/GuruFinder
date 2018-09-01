@@ -6,6 +6,7 @@ from elasticsearch_dsl import Search
 import logging
 from loggingsetup import setup_logging
 from collections import Counter
+import numpy as np
 
 
 class ElasticsearcCli(object):
@@ -75,7 +76,7 @@ class ElasticsearcCli(object):
         for guru in gurus_to_filter:
             guru_dict = Search(using=self.client, index=self.GURUS_CODES_INDEX)\
                 .source(include=["body.user","body.code"]) \
-                .filter('bool', must={'match': {'body.code_type': model_type.lower()}}) \
+                .filter('bool', must={'match': {'body.model_type': model_type.lower()}}) \
                 .filter('bool', must={'match': {'body.user': guru}})[0].execute()[0]
             user = guru_dict.body['user']
             code = guru_dict.body['code']
@@ -95,15 +96,18 @@ class ElasticsearcCli(object):
             .query("multi_match", fields="body.text", query=input_text)[0:n*10].execute()
         top_users = [entry.body["user"]["screen_name"] for entry in list(top_tweets)]
         gurus_names = Counter(top_users).most_common(n)
-
-        # # Obtaining top users name
-        # gurus_names = []
-        # for guru_id in top_id_list:
-        #     id_user_relation = Search(using=self.client, index=self.GURUS_INDEX)\
-        #     .source(include=["body.user.id", "body.user.screen_name"])\
-        #     .filter('bool', must={'match': {'body.user.id': str(guru_id)}})[1].execute()
-        #     gurus_names.append(id_user_relation[0].body['user']['screen_name'])
         return [guru[0] for guru in gurus_names]
+
+
+    def retrieve_gurus_names(self):
+        """Queryng all gurus screen names"""
+        gurus_names = set()
+        gurus_names_query = Search(using=self.client, index=self.GURUS_INDEX) \
+            .source(include=["body.user.screen_name"])
+
+        for entry in gurus_names_query.scan():
+            gurus_names.add(entry.body["user"]["screen_name"])
+        return np.array(list(gurus_names))
 
 if __name__ == "__main__":
     cli = ElasticsearcCli()
