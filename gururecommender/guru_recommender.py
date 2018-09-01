@@ -8,6 +8,7 @@ from elasticsearch_dsl.query import Match
 import argparse
 from text_models.topic_modelling import LDA
 from text_models.embeddeds import Doc2Vec
+from text_models.embeddeds import Word2vec
 from loggingsetup import setup_logging
 from gururecommender.elasticsearch_cli import ElasticsearcCli
 from sklearn.neighbors import BallTree
@@ -20,7 +21,8 @@ class GuruRecommender(object):
                  config=None,
                  default_lda_pickle_filepath="gururecommender/models/lda.pkl",
                  default_vectorizer_pickle_filepath="gururecommender/models/vectorizer.pkl",
-                 default_doc2vec_pickle_filepath="gururecommender/models/d2v.model"):
+                 default_doc2vec_pickle_filepath="gururecommender/models/d2v.model",
+                 default_word2vec_pickle_filepath="gururecommender/models/w2v.model"):
 
         if not config:
             with open('gururecommender/conf/config.json', 'r') as f:
@@ -28,8 +30,10 @@ class GuruRecommender(object):
 
         self.elasticsearch = ElasticsearcCli(host=config["elastic_host"])
         self.lda = LDA(default_lda_pickle_filepath=default_lda_pickle_filepath,
-                       default_vectorizer_pickle_filepath=default_vectorizer_pickle_filepath)
+                       default_vectorizer_pickle_filepath=default_vectorizer_pickle_filepath,
+                       )
         self.doc2vec = Doc2Vec(default_doc2vec_pickle_filepath=default_doc2vec_pickle_filepath)
+        self.word2vec = Word2vec(default_model_pickle_filepath=default_word2vec_pickle_filepath)
         self.LDA_MODEL = "lda"
         self.DOC2VEC_MODEL = "doc2vec"
         self.WORD2VEC_MODEL = "word2vec"
@@ -77,15 +81,16 @@ class GuruRecommender(object):
 
     def fit(self, model_type,
             lda_topic_granurality=3,
-            lda_max_topics=12,
-            words_min_freq=0.01,
-            words_max_freq=0.8,
-            doc2vec_workers=10):
+            lda_max_topics=6,
+            words_min_freq=0.00005,
+            words_max_freq=0.7,
+            workers=45):
         """
         Collect all tweets in elastic and trains a new model which is serialized in disk
         :param model_type: Model type
         """
         logging.info(f"""Fit using model type {model_type}""")
+        logging.info(f"""Using low bound {words_min_freq} and max bound {words_max_freq}""")
         tweets_list = list(self.elasticsearch.retrieve_all_tweets().values())
         # Generating flat list
         tweets_list_processed = np.concatenate(tweets_list).ravel().tolist()
@@ -97,10 +102,11 @@ class GuruRecommender(object):
                          words_min_freq=words_min_freq,
                          words_max_freq=words_max_freq)
         elif model_type.lower() == self.WORD2VEC_MODEL:
-            pass
+            self.word2vec.fit(tweets_list_processed)
         elif model_type.lower() == self.DOC2VEC_MODEL:
-            self.doc2vec.fit(tweets_list_processed)
+            self.doc2vec.fit(tweets_list_processed, min_count_freq=words_min_freq, workers=workers)
         else:
+            self.word2vec.fit(tweets_list_processed, min_count_freq=words_min_freq, workers=workers)
             raise ValueError(f"""Model {model_type} does not exists""")
 
     def predict(self, model_type):
@@ -110,7 +116,7 @@ class GuruRecommender(object):
         if model_type.lower() == self.LDA_MODEL:
             prediction = {k: self.lda.predict(np.array([v]))[0] for k, v in gurus_text.items()}
         elif model_type.lower() == self.WORD2VEC_MODEL:
-            pass
+            prediction = {k: np.mean(self.word2vec.predict(v), axis=0) for k, v in gurus_text.items()}
         elif model_type.lower() == self.DOC2VEC_MODEL:
             prediction = {k: self.doc2vec.predict(v) for k, v in gurus_text.items()}
         else:
@@ -125,6 +131,8 @@ class GuruRecommender(object):
             prediction = self.lda.predict(np.array([input_text]))
         elif model_type.lower() == self.DOC2VEC_MODEL:
             prediction = np.array([self.doc2vec.predict(input_text)])
+        elif model_type.lower() == self.WORD2VEC_MODEL:
+            prediction = np.array([np.mean(self.word2vec.predict(input_text), axis=0)])
         else:
             raise ValueError(f"""Model {model_type} does not exists""")
         return prediction
@@ -166,7 +174,7 @@ if __name__ == "__main__":
         num_recommendation=0
     gurufinder = GuruRecommender()
 
-    if not model in [gurufinder.DOC2VEC_MODEL, gurufinder.LDA_MODEL]:
+    if not model in [gurufinder.DOC2VEC_MODEL, gurufinder.LDA_MODEL, gurufinder.WORD2VEC_MODEL]:
         raise ValueError(f"""model {model} not known""")
     if action == "fit":
             gurufinder.fit(model_type=model)

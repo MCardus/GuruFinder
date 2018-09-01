@@ -1,6 +1,7 @@
 """Elasticsearch client"""
 import datetime
 
+from time import gmtime
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
 import logging
@@ -24,12 +25,13 @@ class ElasticsearcCli(object):
         self.client = Elasticsearch(hosts=[{"host": host, "port": 9200}])
 
 
-    def retrieve_all_tweets(self):
+    def retrieve_all_tweets(self, current_year=True):
         """
-        Returns a dictionary containing all tweets in elasticsearch (keywords and gurus tweets)
+        Returns a dictionary containing all tweets in elasticsearch (keywords and gurus tweets) for a timewindow
+        :param current_year: Time window
         :return: dictionary containing all tweets in elasticsearch
         """
-        gurus_tweets = self.retrieve_gurus_tweets()
+        gurus_tweets = self.retrieve_gurus_tweets(current_year=current_year)
         gurus_keywords = self.retrieve_keywords_tweets()
         gurus_keywords.update(gurus_tweets)
         return gurus_keywords
@@ -52,14 +54,18 @@ class ElasticsearcCli(object):
 
         return keywords_dict
 
-    def retrieve_gurus_tweets(self):
+    def retrieve_gurus_tweets(self, current_year=True):
         """
-        Returns a dictionary containing all tweets for each guru in elasticsearch
-        :return: dictionary containing all tweets for each guru in elasticsearch
+        Returns a dictionary containing all tweets for each guru in elasticsearch for a timewindow
+        :return: dictionary containing all tweets for each guru in elasticsearch for a timewindow
         """
         gurus_dict = dict()
         gurus_entries = Search(using=self.client, index=self.GURUS_INDEX).source(include=["body.text",
-                                                                             "body.user.screen_name"])
+                                                                             "body.user.screen_name",
+                                                                                          "body.created_at"])
+        if current_year:
+            gurus_entries = gurus_entries.filter('bool', must={'query_string': {'default_field': 'body.created_at',
+                                                                                "query": f"""*{gmtime().tm_year}"""}})
 
         for entry in gurus_entries[0:gurus_entries.count()].scan():
             user = entry.body["user"]["screen_name"]
@@ -83,27 +89,41 @@ class ElasticsearcCli(object):
             filtered_gurus[user] = code
         return filtered_gurus
 
-    def search_similar_top_n(self, input_text, n=20):
+    def search_similar_top_n(self, input_text, n=20, current_year=True):
         """
         Elasticsearch computes top twenty similar results computing between a given text and gurus texts
         :param input_text:
         :param n:
+        :param current_year: time window
         :return:
         """
         # Similar users query
         top_tweets = Search(using=self.client, index=self.GURUS_INDEX) \
-            .source(include=["body.text", "body.user.id", "body.user.screen_name", "_score"]) \
-            .query("multi_match", fields="body.text", query=input_text)[0:n*10].execute()
-        top_users = [entry.body["user"]["screen_name"] for entry in list(top_tweets)]
+            .source(include=["body.text", "body.user.id", "body.user.screen_name", "_score", "body.created_at"]) \
+            .query("multi_match", fields="body.text", query=input_text)[0:n*10]
+
+        if current_year:
+            top_tweets = top_tweets.filter('bool', must={'query_string': {'default_field': 'body.created_at',
+                                                                                "query": f"""*{gmtime().tm_year}"""}})
+
+        top_users = [entry.body["user"]["screen_name"] for entry in list(top_tweets.execute())]
         gurus_names = Counter(top_users).most_common(n)
         return [guru[0] for guru in gurus_names]
 
 
-    def retrieve_gurus_names(self):
-        """Queryng all gurus screen names"""
+    def retrieve_gurus_names(self, current_year=True):
+        """
+        Queryng all gurus screen names
+        :param current_year: time window
+        """
+
         gurus_names = set()
         gurus_names_query = Search(using=self.client, index=self.GURUS_INDEX) \
-            .source(include=["body.user.screen_name"])
+            .source(include=["body.user.screen_name", "body.created_at"])
+
+        if current_year:
+            gurus_names_query = gurus_names_query.filter('bool', must={'query_string': {'default_field': 'body.created_at',
+                                                                                "query": f"""*{gmtime().tm_year}"""}})
 
         for entry in gurus_names_query.scan():
             gurus_names.add(entry.body["user"]["screen_name"])
