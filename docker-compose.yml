@@ -158,7 +158,7 @@ services:
         - ./data/logs:/gurufinder/logs
         - ./data/models:/gurufinder/gururecommender/models
       working_dir: /gurufinder
-      command: python gururecommender/guru_recommender.py -a recommend -m "$MODEL_TYPE" -i "$INPUT_TEXT"
+      command: python gururecommender/guru_recommender.py -a recommend -m "$MODEL_TYPE" -i "$INPUT_TEXT" -n "$NUM_RECOMMENDATION" -e "$ELASTIC_FILTER"
 
 volumes:
   data:
