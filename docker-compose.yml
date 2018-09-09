@@ -160,6 +160,24 @@ services:
       working_dir: /gurufinder
       command: python gururecommender/guru_recommender.py -a recommend -m "$MODEL_TYPE" -i "$INPUT_TEXT" -n "$NUM_RECOMMENDATION" -e "$ELASTIC_FILTER"
 
+  api:
+      build: .
+      image: gurufinder/gururecommender
+      restart: on-failure
+      networks:
+        - gurufinder
+      depends_on:
+        - elasticsearch-node
+      container_name: gurufinder_api_gururecommender
+      volumes:
+        - ./data/models:/gurufinder/gururecommender/models
+      working_dir: /gurufinder
+      ports:
+        - "8837:8837"
+      environment:
+      - ACCES_TOKEN
+      command: python api/run_server.py
+
 volumes:
   data:
     driver: local
