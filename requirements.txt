@@ -16,7 +16,7 @@ itsdangerous==0.24
 Jinja2==2.10
 jmespath==0.9.3
 MarkupSafe==1.0
-nltk==3.3
+nltk==3.4.5
 numpy==1.15.0
 python-dateutil==2.7.3
 PyYAML==3.13
